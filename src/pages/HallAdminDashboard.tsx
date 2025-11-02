@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { StatusBadge } from "@/components/StatusBadge";
+import { ProfileSection } from "@/components/ProfileSection";
 import { useAuth } from "@/hooks/useAuth";
 import { Check, X, Calendar, MapPin, User } from "lucide-react";
 import { format } from "date-fns";
@@ -106,10 +108,16 @@ const HallAdminDashboard = () => {
 
   return (
     <DashboardLayout title="Hall Administrator">
-      <div className="space-y-6">
-        <div>
-          <p className="text-muted-foreground">Review and approve exit requests from students</p>
-        </div>
+      <Tabs defaultValue="requests" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="requests">Exit Requests</TabsTrigger>
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="requests" className="space-y-6">
+          <div>
+            <p className="text-muted-foreground">Review and approve exit requests from students in your hall</p>
+          </div>
 
         <div className="grid gap-4">
           {requests.length === 0 ? (
@@ -227,7 +235,12 @@ const HallAdminDashboard = () => {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
+        </TabsContent>
+
+        <TabsContent value="profile">
+          {user && <ProfileSection user={user} showHallSelection={true} />}
+        </TabsContent>
+      </Tabs>
     </DashboardLayout>
   );
 };

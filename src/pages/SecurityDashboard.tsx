@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { StatusBadge } from "@/components/StatusBadge";
+import { ProfileSection } from "@/components/ProfileSection";
 import { Search, CheckCircle, User, Calendar, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
@@ -132,7 +134,13 @@ const SecurityDashboard = () => {
 
   return (
     <DashboardLayout title="Security Officer">
-      <div className="space-y-6">
+      <Tabs defaultValue="verify" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="verify">Verify Passes</TabsTrigger>
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="verify" className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Verify Exit Pass</CardTitle>
@@ -249,7 +257,12 @@ const SecurityDashboard = () => {
             )}
           </CardContent>
         </Card>
-      </div>
+        </TabsContent>
+
+        <TabsContent value="profile">
+          {user && <ProfileSection user={user} showHallSelection={false} />}
+        </TabsContent>
+      </Tabs>
     </DashboardLayout>
   );
 };

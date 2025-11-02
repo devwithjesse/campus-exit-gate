@@ -6,10 +6,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { StatusBadge } from "@/components/StatusBadge";
+import { ProfileSection } from "@/components/ProfileSection";
 import { Plus, Calendar, MapPin, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { z } from "zod";
@@ -110,11 +112,17 @@ const StudentDashboard = () => {
 
   return (
     <DashboardLayout title="Student Dashboard">
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <p className="text-muted-foreground">Manage your campus exit requests</p>
-          </div>
+      <Tabs defaultValue="requests" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="requests">Exit Requests</TabsTrigger>
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="requests" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-muted-foreground">Manage your campus exit requests</p>
+            </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -242,7 +250,12 @@ const StudentDashboard = () => {
             ))
           )}
         </div>
-      </div>
+        </TabsContent>
+
+        <TabsContent value="profile">
+          {user && <ProfileSection user={user} showHallSelection={true} />}
+        </TabsContent>
+      </Tabs>
     </DashboardLayout>
   );
 };
