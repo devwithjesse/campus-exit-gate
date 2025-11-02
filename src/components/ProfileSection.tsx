@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@supabase/supabase-js";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface Hall {
   id: string;
@@ -15,12 +16,12 @@ interface Hall {
 
 interface ProfileSectionProps {
   user: User;
-  showHallSelection?: boolean;
 }
 
-export const ProfileSection = ({ user, showHallSelection = false }: ProfileSectionProps) => {
+export const ProfileSection = ({ user }: ProfileSectionProps) => {
+  const { role } = useUserRole(user.id);
   const [fullName, setFullName] = useState("");
-  const [studentId, setStudentId] = useState("");
+  const [userIdField, setUserIdField] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [hallId, setHallId] = useState("");
   const [halls, setHalls] = useState<Hall[]>([]);
@@ -28,15 +29,39 @@ export const ProfileSection = ({ user, showHallSelection = false }: ProfileSecti
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchProfile();
-    if (showHallSelection) {
-      fetchHalls();
+    if (role) {
+      fetchProfile();
+      if (role === "student" || role === "hall_admin") {
+        fetchHalls();
+      }
     }
-  }, [user.id, showHallSelection]);
+  }, [user.id, role]);
+
+  const getTableName = () => {
+    switch (role) {
+      case "student": return "students";
+      case "hall_admin": return "hall_admins";
+      case "security": return "security_personnel";
+      case "super_admin": return "super_admins";
+      default: return null;
+    }
+  };
+
+  const getUserIdFieldName = () => {
+    switch (role) {
+      case "student": return "student_id";
+      case "hall_admin": return "hall_admin_id";
+      case "security": return "security_id";
+      default: return null;
+    }
+  };
 
   const fetchProfile = async () => {
+    const tableName = getTableName();
+    if (!tableName) return;
+
     const { data, error } = await supabase
-      .from("profiles")
+      .from(tableName)
       .select("*")
       .eq("id", user.id)
       .single();
@@ -52,9 +77,19 @@ export const ProfileSection = ({ user, showHallSelection = false }: ProfileSecti
 
     if (data) {
       setFullName(data.full_name || "");
-      setStudentId(data.student_id || "");
-      setPhoneNumber(data.phone_number || "");
-      setHallId(data.hall_id || "");
+      
+      // Only set phone_number and hall_id if they exist in the data
+      if ('phone_number' in data) {
+        setPhoneNumber(data.phone_number || "");
+      }
+      if ('hall_id' in data) {
+        setHallId(data.hall_id || "");
+      }
+      
+      const idField = getUserIdFieldName();
+      if (idField && idField in data) {
+        setUserIdField(data[idField as keyof typeof data] as string || "");
+      }
     }
   };
 
@@ -77,15 +112,24 @@ export const ProfileSection = ({ user, showHallSelection = false }: ProfileSecti
   };
 
   const handleUpdateProfile = async () => {
+    const tableName = getTableName();
+    if (!tableName) return;
+
     setLoading(true);
+    
+    const updateData: any = {
+      full_name: fullName,
+      phone_number: phoneNumber,
+    };
+
+    // Add hall_id for students only (hall admins can't change their hall)
+    if (role === "student" && hallId) {
+      updateData.hall_id = hallId;
+    }
+
     const { error } = await supabase
-      .from("profiles")
-      .update({
-        full_name: fullName,
-        student_id: studentId,
-        phone_number: phoneNumber,
-        hall_id: showHallSelection ? hallId : undefined,
-      })
+      .from(tableName)
+      .update(updateData)
       .eq("id", user.id);
 
     setLoading(false);
@@ -103,6 +147,15 @@ export const ProfileSection = ({ user, showHallSelection = false }: ProfileSecti
       title: "Success",
       description: "Profile updated successfully",
     });
+  };
+
+  const getIdLabel = () => {
+    switch (role) {
+      case "student": return "Student ID";
+      case "hall_admin": return "Hall Admin ID";
+      case "security": return "Security ID";
+      default: return "User ID";
+    }
   };
 
   return (
@@ -125,15 +178,17 @@ export const ProfileSection = ({ user, showHallSelection = false }: ProfileSecti
             placeholder="Enter your full name"
           />
         </div>
-        <div>
-          <Label htmlFor="studentId">Student ID</Label>
-          <Input
-            id="studentId"
-            value={studentId}
-            onChange={(e) => setStudentId(e.target.value)}
-            placeholder="Enter your student ID"
-          />
-        </div>
+        {role !== "super_admin" && (
+          <div>
+            <Label htmlFor="userId">{getIdLabel()}</Label>
+            <Input
+              id="userId"
+              value={userIdField}
+              disabled
+              placeholder="Auto-generated"
+            />
+          </div>
+        )}
         <div>
           <Label htmlFor="phoneNumber">Phone Number</Label>
           <Input
@@ -143,10 +198,14 @@ export const ProfileSection = ({ user, showHallSelection = false }: ProfileSecti
             placeholder="Enter your phone number"
           />
         </div>
-        {showHallSelection && (
+        {(role === "student" || role === "hall_admin") && (
           <div>
             <Label htmlFor="hall">Hall</Label>
-            <Select value={hallId} onValueChange={setHallId}>
+            <Select 
+              value={hallId} 
+              onValueChange={setHallId}
+              disabled={role === "hall_admin"}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select your hall" />
               </SelectTrigger>
@@ -158,6 +217,11 @@ export const ProfileSection = ({ user, showHallSelection = false }: ProfileSecti
                 ))}
               </SelectContent>
             </Select>
+            {role === "hall_admin" && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Hall assignment cannot be changed
+              </p>
+            )}
           </div>
         )}
         <Button onClick={handleUpdateProfile} disabled={loading}>

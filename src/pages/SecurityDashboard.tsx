@@ -30,7 +30,7 @@ const SecurityDashboard = () => {
       .from("exit_requests")
       .select(`
         *,
-        profiles:student_id (full_name, student_id)
+        students:student_id (full_name, student_id)
       `)
       .in("status", ["exited", "returned"])
       .order("updated_at", { ascending: false })
@@ -50,7 +50,7 @@ const SecurityDashboard = () => {
       .from("exit_requests")
       .select(`
         *,
-        profiles:student_id (full_name, student_id, phone_number)
+        students:student_id (full_name, student_id, phone_number)
       `)
       .eq("qr_code", passId.trim())
       .single();
@@ -173,10 +173,10 @@ const SecurityDashboard = () => {
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-semibold text-lg">
-                      {searchResult.profiles?.full_name || "Unknown Student"}
+                      {searchResult.students?.full_name || "Unknown Student"}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {searchResult.profiles?.student_id && `ID: ${searchResult.profiles.student_id}`}
+                      {searchResult.students?.student_id && `ID: ${searchResult.students.student_id}`}
                     </p>
                   </div>
                   <StatusBadge status={searchResult.status} />
@@ -238,7 +238,7 @@ const SecurityDashboard = () => {
                       <User className="h-4 w-4 text-muted-foreground" />
                       <div>
                         <p className="font-medium text-sm">
-                          {exit.profiles?.full_name || "Unknown"}
+                          {exit.students?.full_name || "Unknown"}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {exit.destination}
@@ -260,7 +260,7 @@ const SecurityDashboard = () => {
         </TabsContent>
 
         <TabsContent value="profile">
-          {user && <ProfileSection user={user} showHallSelection={false} />}
+          {user && <ProfileSection user={user} />}
         </TabsContent>
       </Tabs>
     </DashboardLayout>

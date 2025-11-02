@@ -253,7 +253,7 @@ const StudentDashboard = () => {
         </TabsContent>
 
         <TabsContent value="profile">
-          {user && <ProfileSection user={user} showHallSelection={true} />}
+          {user && <ProfileSection user={user} />}
         </TabsContent>
       </Tabs>
     </DashboardLayout>

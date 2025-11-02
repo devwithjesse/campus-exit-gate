@@ -18,10 +18,25 @@ const SuperAdminDashboard = () => {
   }, []);
 
   const fetchStats = async () => {
-    // Fetch total users
-    const { count: usersCount } = await supabase
-      .from("profiles")
+    // Fetch total users from all user tables
+    const { count: studentsCount } = await supabase
+      .from("students")
       .select("*", { count: "exact", head: true });
+    
+    const { count: hallAdminsCount } = await supabase
+      .from("hall_admins")
+      .select("*", { count: "exact", head: true });
+    
+    const { count: securityCount } = await supabase
+      .from("security_personnel")
+      .select("*", { count: "exact", head: true });
+    
+    const { count: superAdminsCount } = await supabase
+      .from("super_admins")
+      .select("*", { count: "exact", head: true });
+
+    const totalUsers = (studentsCount || 0) + (hallAdminsCount || 0) + 
+                       (securityCount || 0) + (superAdminsCount || 0);
 
     // Fetch total requests
     const { count: requestsCount } = await supabase
@@ -41,7 +56,7 @@ const SuperAdminDashboard = () => {
       .eq("status", "approved");
 
     setStats({
-      totalUsers: usersCount || 0,
+      totalUsers,
       totalRequests: requestsCount || 0,
       pendingRequests: pendingCount || 0,
       approvedRequests: approvedCount || 0,

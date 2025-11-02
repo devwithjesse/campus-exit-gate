@@ -62,6 +62,44 @@ export type Database = {
         }
         Relationships: []
       }
+      hall_admins: {
+        Row: {
+          created_at: string | null
+          full_name: string
+          hall_admin_id: string
+          hall_id: string
+          id: string
+          phone_number: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          full_name: string
+          hall_admin_id: string
+          hall_id: string
+          id: string
+          phone_number?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string
+          hall_admin_id?: string
+          hall_id?: string
+          id?: string
+          phone_number?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hall_admins_hall_id_fkey"
+            columns: ["hall_id"]
+            isOneToOne: true
+            referencedRelation: "halls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       halls: {
         Row: {
           capacity: number | null
@@ -83,14 +121,41 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
+      security_personnel: {
+        Row: {
+          created_at: string | null
+          full_name: string
+          id: string
+          phone_number: string | null
+          security_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          full_name: string
+          id: string
+          phone_number?: string | null
+          security_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string
+          id?: string
+          phone_number?: string | null
+          security_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      students: {
         Row: {
           created_at: string | null
           full_name: string
           hall_id: string | null
           id: string
           phone_number: string | null
-          student_id: string | null
+          student_id: string
           updated_at: string | null
         }
         Insert: {
@@ -99,7 +164,7 @@ export type Database = {
           hall_id?: string | null
           id: string
           phone_number?: string | null
-          student_id?: string | null
+          student_id: string
           updated_at?: string | null
         }
         Update: {
@@ -108,18 +173,39 @@ export type Database = {
           hall_id?: string | null
           id?: string
           phone_number?: string | null
-          student_id?: string | null
+          student_id?: string
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "profiles_hall_id_fkey"
+            foreignKeyName: "students_hall_id_fkey"
             columns: ["hall_id"]
             isOneToOne: false
             referencedRelation: "halls"
             referencedColumns: ["id"]
           },
         ]
+      }
+      super_admins: {
+        Row: {
+          created_at: string | null
+          full_name: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          full_name: string
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

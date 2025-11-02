@@ -35,7 +35,7 @@ const HallAdminDashboard = () => {
       .from("exit_requests")
       .select(`
         *,
-        profiles:student_id (full_name, student_id)
+        students:student_id (full_name, student_id)
       `)
       .order("created_at", { ascending: false });
 
@@ -135,11 +135,11 @@ const HallAdminDashboard = () => {
                       <div className="flex items-center space-x-2 mb-2">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <span className="font-semibold">
-                          {request.profiles?.full_name || "Unknown Student"}
+                          {request.students?.full_name || "Unknown Student"}
                         </span>
-                        {request.profiles?.student_id && (
+                        {request.students?.student_id && (
                           <span className="text-sm text-muted-foreground">
-                            ({request.profiles.student_id})
+                            ({request.students.student_id})
                           </span>
                         )}
                       </div>
@@ -220,7 +220,7 @@ const HallAdminDashboard = () => {
             <DialogHeader>
               <DialogTitle>Exit Pass QR Code</DialogTitle>
               <DialogDescription>
-                {selectedRequest?.profiles?.full_name || "Student"} - {selectedRequest?.reason}
+                {selectedRequest?.students?.full_name || "Student"} - {selectedRequest?.reason}
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center space-y-4 py-4">
@@ -238,7 +238,7 @@ const HallAdminDashboard = () => {
         </TabsContent>
 
         <TabsContent value="profile">
-          {user && <ProfileSection user={user} showHallSelection={true} />}
+          {user && <ProfileSection user={user} />}
         </TabsContent>
       </Tabs>
     </DashboardLayout>
