@@ -32,7 +32,7 @@ const SecurityDashboard = () => {
         *,
         students:student_id (full_name, student_id)
       `)
-      .in("status", ["exited", "returned"])
+      .in("status", ["approved", "exited"])
       .order("updated_at", { ascending: false })
       .limit(10);
 

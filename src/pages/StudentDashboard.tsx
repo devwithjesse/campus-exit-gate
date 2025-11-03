@@ -37,9 +37,12 @@ const StudentDashboard = () => {
     expectedReturnDate: "",
     additionalComments: "",
   });
+  const [hallId, setHallId] = useState<string | null>(null);
+  const [hallName, setHallName] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRequests();
+    fetchStudentHall();
   }, [user]);
 
   const fetchRequests = async () => {
@@ -55,6 +58,33 @@ const StudentDashboard = () => {
       setRequests(data);
     }
     setLoading(false);
+  };
+
+  const fetchStudentHall = async () => {
+    if (!user) return;
+    const { data: student, error: studentError } = await supabase
+      .from("students")
+      .select("hall_id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!studentError && student) {
+      setHallId(student.hall_id || null);
+      if (student.hall_id) {
+        const { data: hall, error: hallError } = await supabase
+          .from("halls")
+          .select("name")
+          .eq("id", student.hall_id)
+          .maybeSingle();
+        if (!hallError && hall) {
+          setHallName(hall.name);
+        } else {
+          setHallName(null);
+        }
+      } else {
+        setHallName(null);
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
