@@ -12,7 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ProfileSection } from "@/components/ProfileSection";
-import { Plus, Calendar, MapPin, MessageSquare } from "lucide-react";
+import { Plus, Calendar, MapPin, MessageSquare, Edit, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { z } from "zod";
 
@@ -29,6 +30,7 @@ const StudentDashboard = () => {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<any>(null);
   const [formData, setFormData] = useState({
     reason: "",
     destination: "",
@@ -61,23 +63,45 @@ const StudentDashboard = () => {
     try {
       requestSchema.parse(formData);
 
-      const { error } = await supabase.from("exit_requests").insert({
-        student_id: user?.id,
-        reason: formData.reason,
-        destination: formData.destination,
-        expected_return_date: new Date(formData.expectedReturnDate).toISOString(),
-        additional_comments: formData.additionalComments || null,
-        status: "pending",
-      });
+      if (editingRequest) {
+        // Update existing request
+        const { error } = await supabase
+          .from("exit_requests")
+          .update({
+            reason: formData.reason,
+            destination: formData.destination,
+            expected_return_date: new Date(formData.expectedReturnDate).toISOString(),
+            additional_comments: formData.additionalComments || null,
+          })
+          .eq("id", editingRequest.id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: "Request submitted!",
-        description: "Your exit request has been submitted for approval.",
-      });
+        toast({
+          title: "Request updated!",
+          description: "Your exit request has been updated.",
+        });
+      } else {
+        // Create new request
+        const { error } = await supabase.from("exit_requests").insert({
+          student_id: user?.id,
+          reason: formData.reason,
+          destination: formData.destination,
+          expected_return_date: new Date(formData.expectedReturnDate).toISOString(),
+          additional_comments: formData.additionalComments || null,
+          status: "pending",
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Request submitted!",
+          description: "Your exit request has been submitted for approval.",
+        });
+      }
 
       setIsDialogOpen(false);
+      setEditingRequest(null);
       setFormData({
         reason: "",
         destination: "",
@@ -102,6 +126,51 @@ const StudentDashboard = () => {
     }
   };
 
+  const handleEdit = (request: any) => {
+    setEditingRequest(request);
+    setFormData({
+      reason: request.reason,
+      destination: request.destination,
+      expectedReturnDate: format(new Date(request.expected_return_date), "yyyy-MM-dd'T'HH:mm"),
+      additionalComments: request.additional_comments || "",
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (requestId: string) => {
+    const { error } = await supabase
+      .from("exit_requests")
+      .delete()
+      .eq("id", requestId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete request",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Request deleted",
+        description: "Your exit request has been deleted.",
+      });
+      fetchRequests();
+    }
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      setEditingRequest(null);
+      setFormData({
+        reason: "",
+        destination: "",
+        expectedReturnDate: "",
+        additionalComments: "",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout title="Student Dashboard">
@@ -123,7 +192,7 @@ const StudentDashboard = () => {
             <div>
               <p className="text-muted-foreground">Manage your campus exit requests</p>
             </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
@@ -132,9 +201,9 @@ const StudentDashboard = () => {
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Create Exit Request</DialogTitle>
+                <DialogTitle>{editingRequest ? "Edit Exit Request" : "Create Exit Request"}</DialogTitle>
                 <DialogDescription>
-                  Fill in the details for your campus exit request.
+                  {editingRequest ? "Update the details of your exit request." : "Fill in the details for your campus exit request."}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -193,7 +262,7 @@ const StudentDashboard = () => {
                   />
                 </div>
                 <Button type="submit" className="w-full">
-                  Submit Request
+                  {editingRequest ? "Update Request" : "Submit Request"}
                 </Button>
               </form>
             </DialogContent>
@@ -214,14 +283,48 @@ const StudentDashboard = () => {
               <Card key={request.id}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <div>
+                    <div className="flex-1">
                       <CardTitle className="text-lg">{request.reason}</CardTitle>
                       <CardDescription className="flex items-center mt-1">
                         <Calendar className="h-4 w-4 mr-1" />
                         {format(new Date(request.created_at), "PPp")}
                       </CardDescription>
                     </div>
-                    <StatusBadge status={request.status} />
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={request.status} />
+                      {request.status === "pending" && (
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(request)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Request</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this exit request? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(request.id)}>
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
