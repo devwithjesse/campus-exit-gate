@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ProfileSection } from "@/components/ProfileSection";
-import { Plus, Calendar, MapPin, MessageSquare, Edit, Trash2 } from "lucide-react";
+import { Plus, Calendar, MapPin, MessageSquare, Edit, Trash2, Building2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { z } from "zod";
@@ -92,6 +92,29 @@ const StudentDashboard = () => {
 
     try {
       requestSchema.parse(formData);
+
+      // Check for active request only when creating new request
+      if (!editingRequest) {
+        const hasActive = requests.some(
+          (r) => r.status === "pending" || r.status === "approved" || r.status === "exited"
+        );
+        if (hasActive) {
+          toast({
+            title: "Active request exists",
+            description: "You must complete your current request before creating a new one.",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (!hallId) {
+          toast({
+            title: "Set your hall",
+            description: "Please set your hall in Profile before creating a request.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
 
       if (editingRequest) {
         // Update existing request
@@ -201,6 +224,10 @@ const StudentDashboard = () => {
     }
   };
 
+  const hasActive = requests.some(
+    (r) => r.status === "pending" || r.status === "approved" || r.status === "exited"
+  );
+
   if (loading) {
     return (
       <DashboardLayout title="Student Dashboard">
@@ -224,7 +251,7 @@ const StudentDashboard = () => {
             </div>
           <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
             <DialogTrigger asChild>
-              <Button>
+              <Button disabled={hasActive || !hallId}>
                 <Plus className="mr-2 h-4 w-4" />
                 New Request
               </Button>
@@ -297,7 +324,14 @@ const StudentDashboard = () => {
               </form>
             </DialogContent>
           </Dialog>
-        </div>
+          </div>
+          {(hasActive || !hallId) && (
+            <p className="text-xs text-muted-foreground">
+              {hasActive
+                ? "You already have an active request. Complete it before creating a new one."
+                : "Set your hall in Profile before creating a request."}
+            </p>
+          )}
 
         <div className="grid gap-4">
           {requests.length === 0 ? (
@@ -369,6 +403,11 @@ const StudentDashboard = () => {
                     <span className="ml-2">
                       {format(new Date(request.expected_return_date), "PPp")}
                     </span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span className="font-medium">Hall:</span>
+                    <span className="ml-2">{hallName || "Not set"}</span>
                   </div>
                   {request.additional_comments && (
                     <div className="flex items-start text-sm">
